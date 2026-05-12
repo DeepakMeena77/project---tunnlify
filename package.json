@@ -1,0 +1,30 @@
+{
+  "name": "tunnlify",
+  "version": "1.0.0",
+  "description": "WebSocket-based HTTP tunnel server + CLI client",
+  "main": "server.js",
+  "bin": {
+    "tunnel": "./bin/tunnel.js"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "tunnel": "node bin/tunnel.js",
+    "test": "node test/auth.unit.test.js && node test/billing.unit.test.js",
+    "test:integration": "node test/integration.test.js",
+    "migrate": "node db/migrate.js",
+    "migrate:reset": "node db/migrate.js --drop"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.20.0",
+    "stripe": "^22.1.1",
+    "ws": "^8.17.1"
+  },
+  "license": "MIT"
+}
