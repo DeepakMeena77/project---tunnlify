@@ -7,13 +7,14 @@ import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
 import { DEFAULT_PLANS, formatPlanPrice } from '../lib/billing'
 
-const TUNNEL_DOMAIN = import.meta.env.VITE_TUNNEL_DOMAIN || 'tunnels.com'
-const POLL_MS       = 3000
+const TUNNEL_DOMAIN   = import.meta.env.VITE_TUNNEL_DOMAIN || 'tunnels.com'
+const TUNNEL_PROTOCOL = import.meta.env.VITE_TUNNEL_PROTOCOL || 'http'
+const POLL_MS         = 3000
 
 export default function DashboardPage() {
   const { user } = useAuth()
   const subdomain = user?.subdomain ?? ''
-  const publicUrl = `http://${subdomain}.${TUNNEL_DOMAIN}`
+  const publicUrl = `${TUNNEL_PROTOCOL}://${subdomain}.${TUNNEL_DOMAIN}`
 
   const [tab,        setTab]      = useState('overview')   // 'overview' | 'inspector'
   const [online,     setOnline]   = useState(false)
@@ -215,6 +216,7 @@ function UpgradePrompt({ usage, loadingPlan, error, onUpgrade }) {
   const plans = usage.plans?.length ? usage.plans : DEFAULT_PLANS
   const nextPlans = plans.filter(p => p.tunnel_limit > usage.tunnel_limit)
   const tunnelNoun = usage.tunnel_limit === 1 ? 'active tunnel' : 'active tunnels'
+  const hasCheckout = nextPlans.some(plan => plan.checkout_enabled)
 
   return (
     <section className="rounded-lg border border-amber-200 bg-amber-50 px-5 py-4">
@@ -224,22 +226,30 @@ function UpgradePrompt({ usage, loadingPlan, error, onUpgrade }) {
           <p className="mt-1 text-sm text-amber-800">
             You are using {usage.active_tunnels} of {usage.tunnel_limit} {tunnelNoun} on the {usage.plan_label || usage.plan} plan.
           </p>
+          {!hasCheckout && nextPlans.length > 0 && (
+            <p className="mt-1 text-sm text-amber-800">Higher limits are coming soon.</p>
+          )}
           {error && <p className="mt-2 text-xs text-red-700">{error}</p>}
         </div>
 
         {nextPlans.length > 0 ? (
           <div className="flex flex-wrap gap-2">
-            {nextPlans.map(plan => (
-              <button
-                key={plan.key}
-                type="button"
-                onClick={() => onUpgrade(plan.key)}
-                disabled={!!loadingPlan}
-                className="btn-primary btn-sm whitespace-nowrap"
-              >
-                {loadingPlan === plan.key ? 'Opening...' : `${plan.label} ${formatPlanPrice(plan)}`}
-              </button>
-            ))}
+            {nextPlans.map(plan => plan.checkout_enabled ? (
+                <button
+                  key={plan.key}
+                  type="button"
+                  onClick={() => onUpgrade(plan.key)}
+                  disabled={!!loadingPlan}
+                  className="btn-primary btn-sm whitespace-nowrap"
+                >
+                  {loadingPlan === plan.key ? 'Opening...' : `${plan.label} ${formatPlanPrice(plan)}`}
+                </button>
+              ) : (
+                <span key={plan.key} className="badge-gray whitespace-nowrap">
+                  {plan.label} coming soon
+                </span>
+              )
+            )}
           </div>
         ) : (
           <span className="badge-gray">Team limit</span>
@@ -318,7 +328,7 @@ function EmptyRequests({ subdomain, onInspect }) {
       <p className="text-sm text-gray-400">No requests yet.</p>
       <p className="text-xs text-gray-400">
         Start your tunnel and visit{' '}
-        <span className="font-mono text-gray-600">http://{subdomain}.tunnels.com</span>
+        <span className="font-mono text-gray-600">{TUNNEL_PROTOCOL}://{subdomain}.{TUNNEL_DOMAIN}</span>
       </p>
       <button onClick={onInspect} className="btn-secondary btn-sm mt-2">
         Open Inspector

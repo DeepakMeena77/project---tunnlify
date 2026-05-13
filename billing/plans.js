@@ -42,6 +42,10 @@ function getPlanLimit(plan) {
   return getPlan(plan).tunnelLimit;
 }
 
+function isBillingEnabled() {
+  return process.env.BILLING_ENABLED === 'true';
+}
+
 function getStripePriceId(plan) {
   const item = PLANS[normalizePlan(plan)];
   return item?.priceEnv ? process.env[item.priceEnv] : null;
@@ -62,6 +66,7 @@ function listPlans() {
     currency: plan.currency,
     currency_symbol: plan.currencySymbol,
     tunnel_limit: plan.tunnelLimit,
+    checkout_enabled: plan.key !== 'free' && isBillingEnabled() && Boolean(getStripePriceId(plan.key)),
   }));
 }
 
@@ -70,6 +75,7 @@ module.exports = {
   normalizePlan,
   getPlan,
   getPlanLimit,
+  isBillingEnabled,
   getStripePriceId,
   getPlanFromPriceId,
   listPlans,

@@ -121,6 +121,7 @@ function BillingPlans({ currentPlan }) {
         {plans.map(plan => {
           const isCurrent = plan.key === currentPlan
           const isPaid = plan.key !== 'free'
+          const canCheckout = Boolean(plan.checkout_enabled)
           const price = formatPlanPrice(plan)
           return (
             <div key={plan.key} className="rounded-lg border border-gray-200 bg-white p-4 space-y-4">
@@ -140,11 +141,11 @@ function BillingPlans({ currentPlan }) {
 
               <button
                 type="button"
-                disabled={isCurrent || !isPaid || !!loadingPlan}
+                disabled={isCurrent || !isPaid || !canCheckout || !!loadingPlan}
                 onClick={() => handleCheckout(plan.key)}
-                className={isCurrent || !isPaid ? 'btn-secondary btn-sm w-full' : 'btn-primary btn-sm w-full'}
+                className={isCurrent || !isPaid || !canCheckout ? 'btn-secondary btn-sm w-full' : 'btn-primary btn-sm w-full'}
               >
-                {isCurrent ? 'Current plan' : !isPaid ? 'Included' : loadingPlan === plan.key ? 'Opening...' : 'Upgrade'}
+                {isCurrent ? 'Current plan' : !isPaid ? 'Included' : !canCheckout ? 'Coming soon' : loadingPlan === plan.key ? 'Opening...' : 'Upgrade'}
               </button>
             </div>
           )

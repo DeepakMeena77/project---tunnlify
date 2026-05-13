@@ -15,10 +15,17 @@ const { migrate }      = require('./db/migrate');
 const { insertRequest } = require('./db/requests');
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const HTTP_PORT       = parseInt(process.env.HTTP_PORT || '3000', 10);
+const HTTP_PORT       = parseInt(process.env.PORT || process.env.HTTP_PORT || '3000', 10);
 const TUNNEL_DOMAIN   = process.env.TUNNEL_DOMAIN || 'tunnels.com';
+const PUBLIC_TUNNEL_PROTOCOL = process.env.PUBLIC_TUNNEL_PROTOCOL ||
+  (process.env.NODE_ENV === 'production' ? 'https' : 'http');
+const PUBLIC_TUNNEL_PORT = process.env.PUBLIC_TUNNEL_PORT ??
+  (process.env.PORT ? '' : String(HTTP_PORT));
 const HEARTBEAT_MS    = 30_000;   // 30 s ping interval
 const REQUEST_TIMEOUT = 30_000;   // 30 s max wait for tunnel reply
+const CORS_ORIGINS    = parseOriginList(
+  process.env.CORS_ORIGIN || process.env.FRONTEND_URL || process.env.APP_URL
+);
 
 // ─── State ────────────────────────────────────────────────────────────────────
 /**
@@ -61,6 +68,27 @@ function isValidSubdomain(value) {
     /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(value);
 }
 
+function parseOriginList(value = '') {
+  return String(value)
+    .split(',')
+    .map((origin) => origin.trim().replace(/\/$/, ''))
+    .filter(Boolean);
+}
+
+function isAllowedCorsOrigin(origin) {
+  if (!origin) return false;
+  const normalized = origin.replace(/\/$/, '');
+  if (CORS_ORIGINS.includes('*') || CORS_ORIGINS.includes(normalized)) return true;
+
+  return process.env.NODE_ENV !== 'production' &&
+    /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(normalized);
+}
+
+function publicTunnelUrl(subdomain) {
+  const port = PUBLIC_TUNNEL_PORT ? `:${PUBLIC_TUNNEL_PORT}` : '';
+  return `${PUBLIC_TUNNEL_PROTOCOL}://${subdomain}.${TUNNEL_DOMAIN}${port}`;
+}
+
 /** Safely send JSON over a WebSocket (no-op if not OPEN) */
 function wsSend(socket, data) {
   if (socket.readyState === socket.OPEN) {
@@ -71,6 +99,26 @@ function wsSend(socket, data) {
 // ─── Express app ─────────────────────────────────────────────────────────────
 const app    = express();
 const server = http.createServer(app);
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (isAllowedCorsOrigin(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      req.headers['access-control-request-headers'] || 'Content-Type, Authorization, Stripe-Signature'
+    );
+    res.vary('Origin');
+  }
+
+  if (req.method === 'OPTIONS' && origin && req.headers['access-control-request-method']) {
+    return res.sendStatus(204);
+  }
+
+  return next();
+});
 
 // Read raw body as a Buffer so we can forward tunnel traffic accurately.
 // Auth routes parse this Buffer themselves (see auth/routes.js → parseBody).
@@ -337,7 +385,7 @@ wss.on('connection', (socket, req) => {
       wsSend(socket, {
         type:      'registered',
         subdomain: claimedSubdomain,
-        publicUrl: `http://${claimedSubdomain}.${TUNNEL_DOMAIN}:${HTTP_PORT}`,
+        publicUrl: publicTunnelUrl(claimedSubdomain),
         plan:      user.plan,
         tunnel_limit: planLimit,
         active_tunnels: replacingOwnTunnel ? activeTunnels : activeTunnels + 1,
@@ -425,7 +473,7 @@ async function start() {
     console.log('├──────────────────────────────────────────────────┤');
     console.log(`│  HTTP   →  http://localhost:${HTTP_PORT}                  │`);
     console.log(`│  WS     →  ws://localhost:${HTTP_PORT}                    │`);
-    console.log(`│  Tunnel →  <subdomain>.${TUNNEL_DOMAIN}:${HTTP_PORT}          │`);
+    console.log(`│  Tunnel →  ${publicTunnelUrl('<subdomain>')}          │`);
     console.log('├──────────────────────────────────────────────────┤');
     console.log('│  Auth   →  POST /auth/signup                      │');
     console.log('│            POST /auth/login                       │');

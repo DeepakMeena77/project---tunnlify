@@ -11,6 +11,7 @@ const {
   getPlanFromPriceId,
   getPlanLimit,
   getStripePriceId,
+  isBillingEnabled,
   listPlans,
 } = require('./plans');
 
@@ -231,6 +232,12 @@ function createBillingRouter({ getTunnelUsage } = {}) {
         return res.status(400).json({
           error: 'ValidationError',
           message: 'The Free plan does not require Stripe Checkout',
+        });
+      }
+      if (!isBillingEnabled()) {
+        return res.status(503).json({
+          error: 'BillingNotEnabled',
+          message: 'Paid plans are not enabled yet',
         });
       }
 
