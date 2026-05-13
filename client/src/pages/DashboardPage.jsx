@@ -7,14 +7,29 @@ import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
 import { DEFAULT_PLANS, formatPlanPrice } from '../lib/billing'
 
-const TUNNEL_DOMAIN   = import.meta.env.VITE_TUNNEL_DOMAIN || 'tunnels.com'
-const TUNNEL_PROTOCOL = import.meta.env.VITE_TUNNEL_PROTOCOL || 'http'
-const POLL_MS         = 3000
+const API_BASE          = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+const TUNNEL_DOMAIN     = import.meta.env.VITE_TUNNEL_DOMAIN || 'tunnels.com'
+const TUNNEL_PROTOCOL   = import.meta.env.VITE_TUNNEL_PROTOCOL || 'http'
+const TUNNEL_URL_MODE   = import.meta.env.VITE_TUNNEL_URL_MODE || 'subdomain'
+const TUNNEL_BASE_URL   = (import.meta.env.VITE_TUNNEL_BASE_URL || API_BASE).replace(/\/$/, '')
+const TUNNEL_SERVER_URL = import.meta.env.VITE_TUNNEL_SERVER_URL || apiUrlToWsUrl(API_BASE)
+const POLL_MS           = 3000
+
+function apiUrlToWsUrl(url) {
+  return url.replace(/^https:/, 'wss:').replace(/^http:/, 'ws:')
+}
+
+function buildPublicUrl(subdomain) {
+  if (TUNNEL_URL_MODE === 'path' && TUNNEL_BASE_URL) {
+    return `${TUNNEL_BASE_URL}/t/${encodeURIComponent(subdomain)}`
+  }
+  return `${TUNNEL_PROTOCOL}://${subdomain}.${TUNNEL_DOMAIN}`
+}
 
 export default function DashboardPage() {
   const { user } = useAuth()
   const subdomain = user?.subdomain ?? ''
-  const publicUrl = `${TUNNEL_PROTOCOL}://${subdomain}.${TUNNEL_DOMAIN}`
+  const publicUrl = buildPublicUrl(subdomain)
 
   const [tab,        setTab]      = useState('overview')   // 'overview' | 'inspector'
   const [online,     setOnline]   = useState(false)
@@ -76,7 +91,7 @@ export default function DashboardPage() {
     : `${Math.floor(uptime / 3600)}h ${Math.floor((uptime % 3600) / 60)}m`
     : '—'
 
-  const tunnelCmd = `tunnel start --port 3000 --subdomain ${subdomain} --token ${user?.api_token ?? '...'}`
+  const tunnelCmd = `tunnel start${TUNNEL_SERVER_URL ? ` --server ${TUNNEL_SERVER_URL}` : ''} --port 3000 --subdomain ${subdomain} --token ${user?.api_token ?? '...'}`
   const activeTunnels = usage.active_tunnels ?? 0
   const tunnelLimit = usage.tunnel_limit ?? 1
   const planLabel = usage.plan_label || usage.plan || 'Free'
@@ -193,7 +208,7 @@ export default function DashboardPage() {
                   </span>
                 )}
               </div>
-              {online ? <SimulatedFeed /> : <EmptyRequests subdomain={subdomain} onInspect={() => setTab('inspector')} />}
+              {online ? <SimulatedFeed /> : <EmptyRequests publicUrl={publicUrl} onInspect={() => setTab('inspector')} />}
             </div>
           )}
 
@@ -322,13 +337,13 @@ function SimulatedFeed() {
   )
 }
 
-function EmptyRequests({ subdomain, onInspect }) {
+function EmptyRequests({ publicUrl, onInspect }) {
   return (
     <div className="px-5 py-14 text-center space-y-2">
       <p className="text-sm text-gray-400">No requests yet.</p>
       <p className="text-xs text-gray-400">
         Start your tunnel and visit{' '}
-        <span className="font-mono text-gray-600">{TUNNEL_PROTOCOL}://{subdomain}.{TUNNEL_DOMAIN}</span>
+        <span className="font-mono text-gray-600">{publicUrl}</span>
       </p>
       <button onClick={onInspect} className="btn-secondary btn-sm mt-2">
         Open Inspector

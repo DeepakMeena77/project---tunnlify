@@ -21,6 +21,11 @@ const PUBLIC_TUNNEL_PROTOCOL = process.env.PUBLIC_TUNNEL_PROTOCOL ||
   (process.env.NODE_ENV === 'production' ? 'https' : 'http');
 const PUBLIC_TUNNEL_PORT = process.env.PUBLIC_TUNNEL_PORT ??
   (process.env.PORT ? '' : String(HTTP_PORT));
+const TUNNEL_URL_MODE = process.env.TUNNEL_URL_MODE === 'path' ? 'path' : 'subdomain';
+const PUBLIC_TUNNEL_BASE_URL = String(
+  process.env.PUBLIC_TUNNEL_BASE_URL ||
+  `${PUBLIC_TUNNEL_PROTOCOL}://${TUNNEL_DOMAIN}${PUBLIC_TUNNEL_PORT ? `:${PUBLIC_TUNNEL_PORT}` : ''}`
+).replace(/\/$/, '');
 const HEARTBEAT_MS    = 30_000;   // 30 s ping interval
 const REQUEST_TIMEOUT = 30_000;   // 30 s max wait for tunnel reply
 const CORS_ORIGINS    = parseOriginList(
@@ -47,6 +52,25 @@ function extractSubdomain(host = '') {
     return hostname.slice(0, hostname.length - suffix.length);
   }
   return null;
+}
+
+function extractPathTunnel(reqUrl = '') {
+  const url = new URL(reqUrl, 'http://tunnlify.local');
+  const match = url.pathname.match(/^\/t\/([^/]+)(\/.*)?$/);
+  if (!match) return null;
+
+  const subdomain = decodeURIComponent(match[1]).toLowerCase();
+  const forwardedPath = `${match[2] || '/'}${url.search}`;
+  return { subdomain, path: forwardedPath, mode: 'path' };
+}
+
+function resolveTunnelRoute(req) {
+  const hostSubdomain = extractSubdomain(req.headers.host || '');
+  if (hostSubdomain) {
+    return { subdomain: hostSubdomain, path: req.url, mode: 'subdomain' };
+  }
+
+  return extractPathTunnel(req.url);
 }
 
 /** Generate a short unique ID for pending request correlation */
@@ -85,6 +109,10 @@ function isAllowedCorsOrigin(origin) {
 }
 
 function publicTunnelUrl(subdomain) {
+  if (TUNNEL_URL_MODE === 'path') {
+    return `${PUBLIC_TUNNEL_BASE_URL}/t/${encodeURIComponent(subdomain)}`;
+  }
+
   const port = PUBLIC_TUNNEL_PORT ? `:${PUBLIC_TUNNEL_PORT}` : '';
   return `${PUBLIC_TUNNEL_PROTOCOL}://${subdomain}.${TUNNEL_DOMAIN}${port}`;
 }
@@ -144,7 +172,7 @@ app.get('/status', (req, res) => {
  * Record a proxied request to the DB (fire-and-forget).
  * @param {object} tunnelSocket  The registered WebSocket (has _userId, _subdomain)
  */
-function recordRequest({ tunnelSocket, req, startMs, status, resHeaders, resBodyBuf, errMsg }) {
+function recordRequest({ tunnelSocket, req, path, startMs, status, resHeaders, resBodyBuf, errMsg }) {
   if (!tunnelSocket || !tunnelSocket._userId) return;
   const responseTimeMs = Date.now() - startMs;
 
@@ -159,7 +187,7 @@ function recordRequest({ tunnelSocket, req, startMs, status, resHeaders, resBody
     userId:          tunnelSocket._userId,
     subdomain:       tunnelSocket._subdomain,
     method:          req.method,
-    path:            req.url,
+    path:            path || req.url,
     statusCode:      status,
     responseTimeMs,
     requestHeaders:  req.headers,
@@ -172,12 +200,20 @@ function recordRequest({ tunnelSocket, req, startMs, status, resHeaders, resBody
 // Proxy every other HTTP request through the matching WebSocket tunnel.
 app.all('*', async (req, res) => {
   const host      = req.headers['host'] || '';
-  const subdomain = extractSubdomain(host);
+  const route     = resolveTunnelRoute(req);
+  const subdomain = route?.subdomain;
 
   if (!subdomain) {
     return res.status(400).json({
       error: 'Bad Request',
-      message: `Invalid Host header — expected <subdomain>.${TUNNEL_DOMAIN}`,
+      message: `Expected <subdomain>.${TUNNEL_DOMAIN} or /t/<subdomain>`,
+    });
+  }
+
+  if (!isValidSubdomain(subdomain)) {
+    return res.status(400).json({
+      error: 'Bad Request',
+      message: 'Invalid subdomain. Use lowercase letters, numbers, and hyphens only',
     });
   }
 
@@ -196,13 +232,13 @@ app.all('*', async (req, res) => {
     type:       'request',
     requestId,
     method:     req.method,
-    path:       req.url,
+    path:       route.path,
     headers:    req.headers,
     body:       req.body && req.body.length ? req.body.toString('base64') : null,
     bodyBase64: true,
   };
 
-  console.log(`[HTTP → WS] ${req.method} ${req.url} | subdomain="${subdomain}" | id=${requestId}`);
+  console.log(`[HTTP → WS] ${req.method} ${route.path} | subdomain="${subdomain}" | mode=${route.mode} | id=${requestId}`);
 
   const responsePromise = new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
@@ -246,13 +282,13 @@ app.all('*', async (req, res) => {
       res.end(responseBody);
     }
 
-    console.log(`[WS → HTTP] ${status} ${req.method} ${req.url} | id=${requestId}`);
-    recordRequest({ tunnelSocket: socket, req, startMs, status, resHeaders: headers,
+    console.log(`[WS → HTTP] ${status} ${req.method} ${route.path} | id=${requestId}`);
+    recordRequest({ tunnelSocket: socket, req, path: route.path, startMs, status, resHeaders: headers,
       resBodyBuf: Buffer.isBuffer(responseBody) ? responseBody : Buffer.from(responseBody) });
   } catch (err) {
     console.error(`[HTTP] Error for ${requestId}:`, err.message);
     res.status(502).json({ error: 'Bad Gateway', message: err.message });
-    recordRequest({ tunnelSocket: socket, req, startMs, status: 502, errMsg: err.message });
+    recordRequest({ tunnelSocket: socket, req, path: route.path, startMs, status: 502, errMsg: err.message });
   }
 });
 

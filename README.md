@@ -70,8 +70,10 @@ Set these environment variables in `.env` or your hosting provider:
 | `PORT`                      | —             | Hosting-provided listen port          |
 | `HTTP_PORT`                 | `3000`        | HTTP + WebSocket listen port          |
 | `TUNNEL_DOMAIN`             | `tunnels.com` | Host suffix for subdomain routing     |
+| `TUNNEL_URL_MODE`           | `subdomain`   | `subdomain` or `path` tunnel URLs     |
 | `PUBLIC_TUNNEL_PROTOCOL`    | `http`/`https` | Protocol shown in tunnel URLs        |
 | `PUBLIC_TUNNEL_PORT`        | local port    | Optional public URL port              |
+| `PUBLIC_TUNNEL_BASE_URL`    | derived       | Backend base URL for path mode        |
 | `DB_DRIVER`                 | —             | Set to `file` for zero-setup local dev |
 | `DATABASE_URL` or `PG*`     | —             | PostgreSQL connection                 |
 | `DATABASE_URL_SSL`          | auto          | Set `true`/`false` for hosted DB TLS  |
@@ -90,8 +92,11 @@ Client build variables:
 | Variable                 | Default                 | Description                |
 |--------------------------|-------------------------|----------------------------|
 | `VITE_API_URL`           | same origin             | Backend API base URL       |
+| `VITE_TUNNEL_URL_MODE`   | `subdomain`             | `subdomain` or `path` tunnel URLs |
 | `VITE_TUNNEL_DOMAIN`     | `tunnels.com`           | Public tunnel host suffix  |
 | `VITE_TUNNEL_PROTOCOL`   | `http`                  | `http` locally, `https` in production |
+| `VITE_TUNNEL_BASE_URL`   | `VITE_API_URL`          | Backend base URL for path mode |
+| `VITE_TUNNEL_SERVER_URL` | derived from API URL    | WebSocket URL for the tunnel CLI |
 
 ## Deployment
 
@@ -105,9 +110,25 @@ Recommended free stack for a first public demo:
 3. Deploy `client/` as a static site.
    - Build command: `npm install && npm run build`
    - Publish directory: `dist`
-4. Point a wildcard domain such as `*.tunnel.example.com` at the backend service, then set `TUNNEL_DOMAIN=tunnel.example.com`.
+4. Optional: point a wildcard domain such as `*.tunnel.example.com` at the backend service, then set `TUNNEL_DOMAIN=tunnel.example.com`.
 
-Backend environment example:
+No-domain deployment mode uses URLs like `https://your-backend.onrender.com/t/john`. Use this when you do not have a wildcard domain yet.
+
+Backend environment example without a custom domain:
+
+```bash
+DB_DRIVER=postgresql
+DATABASE_URL=postgresql://...
+DATABASE_URL_SSL=true
+JWT_SECRET=replace_with_a_long_random_secret
+TUNNEL_URL_MODE=path
+PUBLIC_TUNNEL_BASE_URL=https://your-backend.onrender.com
+FRONTEND_URL=https://your-frontend.vercel.app
+CORS_ORIGIN=https://your-frontend.vercel.app
+BILLING_ENABLED=false
+```
+
+Backend environment example with a wildcard domain:
 
 ```bash
 DB_DRIVER=postgresql
@@ -115,6 +136,7 @@ DATABASE_URL=postgresql://...
 DATABASE_URL_SSL=true
 JWT_SECRET=replace_with_a_long_random_secret
 TUNNEL_DOMAIN=tunnel.example.com
+TUNNEL_URL_MODE=subdomain
 PUBLIC_TUNNEL_PROTOCOL=https
 FRONTEND_URL=https://your-frontend.example.com
 CORS_ORIGIN=https://your-frontend.example.com
@@ -123,10 +145,20 @@ BILLING_ENABLED=false
 
 On most hosted platforms, leave `PUBLIC_TUNNEL_PORT` unset so public URLs do not include the internal app port.
 
-Frontend environment example:
+Frontend environment example without a custom domain:
+
+```bash
+VITE_API_URL=https://your-backend.onrender.com
+VITE_TUNNEL_URL_MODE=path
+VITE_TUNNEL_BASE_URL=https://your-backend.onrender.com
+VITE_TUNNEL_SERVER_URL=wss://your-backend.onrender.com
+```
+
+Frontend environment example with a wildcard domain:
 
 ```bash
 VITE_API_URL=https://your-backend.example.com
+VITE_TUNNEL_URL_MODE=subdomain
 VITE_TUNNEL_DOMAIN=tunnel.example.com
 VITE_TUNNEL_PROTOCOL=https
 ```
