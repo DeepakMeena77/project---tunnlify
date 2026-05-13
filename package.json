@@ -10,7 +10,7 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "tunnel": "node bin/tunnel.js",
-    "test": "node test/auth.unit.test.js && node test/billing.unit.test.js",
+    "test": "node test/auth.unit.test.js && node test/billing.unit.test.js && node test/path-mode.unit.test.js",
     "test:integration": "node test/integration.test.js",
     "migrate": "node db/migrate.js",
     "migrate:reset": "node db/migrate.js --drop"

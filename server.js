@@ -13,6 +13,12 @@ const { createBillingRouter } = require('./billing/routes');
 const { getPlanLimit } = require('./billing/plans');
 const { migrate }      = require('./db/migrate');
 const { insertRequest } = require('./db/requests');
+const {
+  barePathTunnelRedirect,
+  extractPathTunnelFromUrl,
+  preparePathTunnelResponse,
+  resolvePathTunnelFallback,
+} = require('./lib/path-mode');
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const HTTP_PORT       = parseInt(process.env.PORT || process.env.HTTP_PORT || '3000', 10);
@@ -55,13 +61,7 @@ function extractSubdomain(host = '') {
 }
 
 function extractPathTunnel(reqUrl = '') {
-  const url = new URL(reqUrl, 'http://tunnlify.local');
-  const match = url.pathname.match(/^\/t\/([^/]+)(\/.*)?$/);
-  if (!match) return null;
-
-  const subdomain = decodeURIComponent(match[1]).toLowerCase();
-  const forwardedPath = `${match[2] || '/'}${url.search}`;
-  return { subdomain, path: forwardedPath, mode: 'path' };
+  return extractPathTunnelFromUrl(reqUrl);
 }
 
 function resolveTunnelRoute(req) {
@@ -70,7 +70,8 @@ function resolveTunnelRoute(req) {
     return { subdomain: hostSubdomain, path: req.url, mode: 'subdomain' };
   }
 
-  return extractPathTunnel(req.url);
+  return extractPathTunnel(req.url) ||
+    (TUNNEL_URL_MODE === 'path' ? resolvePathTunnelFallback(req) : null);
 }
 
 /** Generate a short unique ID for pending request correlation */
@@ -110,7 +111,7 @@ function isAllowedCorsOrigin(origin) {
 
 function publicTunnelUrl(subdomain) {
   if (TUNNEL_URL_MODE === 'path') {
-    return `${PUBLIC_TUNNEL_BASE_URL}/t/${encodeURIComponent(subdomain)}`;
+    return `${PUBLIC_TUNNEL_BASE_URL}/t/${encodeURIComponent(subdomain)}/`;
   }
 
   const port = PUBLIC_TUNNEL_PORT ? `:${PUBLIC_TUNNEL_PORT}` : '';
@@ -217,6 +218,11 @@ app.all('*', async (req, res) => {
     });
   }
 
+  if (route.mode === 'path' && (req.method === 'GET' || req.method === 'HEAD')) {
+    const redirectUrl = barePathTunnelRedirect(req.url);
+    if (redirectUrl) return res.redirect(308, redirectUrl);
+  }
+
   const socket = tunnels.get(subdomain);
   if (!socket || socket.readyState !== socket.OPEN) {
     console.warn(`[HTTP] No active tunnel for "${subdomain}" (host: ${host})`);
@@ -259,7 +265,24 @@ app.all('*', async (req, res) => {
     const tunnelRes = await responsePromise;
 
     const status  = tunnelRes.status  || 200;
-    const headers = tunnelRes.headers || {};
+    let headers = tunnelRes.headers || {};
+
+    let responseBody = Buffer.alloc(0);
+    if (tunnelRes.bodyBase64 && tunnelRes.body) {
+      responseBody = Buffer.from(tunnelRes.body, 'base64');
+    } else if (Buffer.isBuffer(tunnelRes.body)) {
+      responseBody = tunnelRes.body;
+    } else {
+      responseBody = Buffer.from(tunnelRes.body ?? '');
+    }
+
+    const preparedResponse = preparePathTunnelResponse({
+      route,
+      headers,
+      body: responseBody,
+    });
+    headers = preparedResponse.headers;
+    responseBody = preparedResponse.body;
 
     const HOP_BY_HOP = new Set([
       'connection', 'keep-alive', 'transfer-encoding', 'te',
@@ -272,19 +295,11 @@ app.all('*', async (req, res) => {
     });
 
     res.status(status);
-
-    let responseBody = null;
-    if (tunnelRes.bodyBase64 && tunnelRes.body) {
-      responseBody = Buffer.from(tunnelRes.body, 'base64');
-      res.end(responseBody);
-    } else {
-      responseBody = tunnelRes.body ?? '';
-      res.end(responseBody);
-    }
+    res.end(responseBody);
 
     console.log(`[WS → HTTP] ${status} ${req.method} ${route.path} | id=${requestId}`);
     recordRequest({ tunnelSocket: socket, req, path: route.path, startMs, status, resHeaders: headers,
-      resBodyBuf: Buffer.isBuffer(responseBody) ? responseBody : Buffer.from(responseBody) });
+      resBodyBuf: responseBody });
   } catch (err) {
     console.error(`[HTTP] Error for ${requestId}:`, err.message);
     res.status(502).json({ error: 'Bad Gateway', message: err.message });
