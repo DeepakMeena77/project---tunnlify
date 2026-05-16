@@ -45,11 +45,11 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Minimal header */}
-      <header className="border-b border-gray-200 h-14 flex items-center px-6">
+      <header className="border-b border-gray-200 h-14 flex items-center px-4 sm:px-6">
         <Link to="/" className="text-sm font-semibold text-gray-900">Tunnlify</Link>
       </header>
 
-      <main className="flex-1 flex items-center justify-center px-6 py-16">
+      <main className="flex-1 flex items-center justify-center px-4 py-10 sm:px-6 sm:py-16">
         <div className="w-full max-w-sm">
 
           <div className="mb-8">

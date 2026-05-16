@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useInspector } from '../hooks/useInspector'
 import { CopyButton } from './CopyButton'
 
@@ -13,15 +13,15 @@ export default function RequestInspector() {
           loading, error, lastRefresh, replay, replayState } = useInspector()
 
   return (
-    <div className="flex gap-0 h-[520px] overflow-hidden rounded-lg border border-gray-200">
+    <div className="flex h-[620px] max-h-[80svh] flex-col overflow-hidden rounded-lg border border-gray-200 lg:h-[520px] lg:flex-row">
 
       {/* ── Left: Request table ────────────────────────────────────────────── */}
-      <div className={`flex flex-col ${selected ? 'w-[52%]' : 'w-full'} border-r border-gray-100 transition-all duration-200`}>
+      <div className={`flex min-h-0 flex-col ${selected ? 'h-1/2 lg:h-auto lg:w-[52%]' : 'h-full lg:w-full'} border-b border-gray-100 transition-all duration-200 lg:border-b-0 lg:border-r`}>
 
         {/* Table header */}
-        <div className="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white">
+        <div className="flex shrink-0 flex-col gap-2 border-b border-gray-100 bg-white px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-4">
           <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Requests</span>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {lastRefresh && (
               <span className="text-xs text-gray-400">
                 {lastRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
@@ -35,10 +35,12 @@ export default function RequestInspector() {
         </div>
 
         {/* Column headings */}
-        <div className="px-4 py-2 border-b border-gray-100 grid grid-cols-[64px_1fr_48px_60px_72px] gap-2 shrink-0 bg-gray-50">
-          {['Method', 'Path', 'Status', 'Time', 'When'].map(h => (
-            <span key={h} className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">{h}</span>
-          ))}
+        <div className="grid shrink-0 grid-cols-[64px_minmax(0,1fr)_48px] gap-2 border-b border-gray-100 bg-gray-50 px-3 py-2 sm:grid-cols-[64px_minmax(0,1fr)_48px_60px_72px] sm:px-4">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Method</span>
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Path</span>
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Status</span>
+          <span className="hidden text-[10px] font-semibold uppercase tracking-wide text-gray-400 sm:block">Time</span>
+          <span className="hidden text-[10px] font-semibold uppercase tracking-wide text-gray-400 sm:block">When</span>
         </div>
 
         {/* Rows */}
@@ -96,16 +98,16 @@ function RequestRow({ row, isSelected, onClick, replayState, onReplay }) {
   return (
     <div
       onClick={onClick}
-      className={`px-4 py-2.5 grid grid-cols-[64px_1fr_48px_60px_72px] gap-2 items-center
+      className={`grid grid-cols-[64px_minmax(0,1fr)_48px] items-center gap-2 px-3 py-2.5 sm:grid-cols-[64px_minmax(0,1fr)_48px_60px_72px] sm:px-4
         cursor-pointer border-b border-gray-50 text-xs font-mono
         hover:bg-gray-50 transition-colors group
         ${isSelected ? 'bg-gray-50 border-l-2 border-l-gray-900' : ''}`}
     >
       <MethodBadge method={row.method} />
-      <span className="text-gray-700 truncate" title={row.path}>{row.path}</span>
+      <span className="min-w-0 truncate text-gray-700" title={row.path}>{row.path}</span>
       <StatusCode code={row.status_code} />
-      <span className="text-gray-400">{row.response_time_ms != null ? `${row.response_time_ms}ms` : '—'}</span>
-      <span className="text-gray-400 truncate">{timeAgo(row.created_at)}</span>
+      <span className="hidden text-gray-400 sm:block">{row.response_time_ms != null ? `${row.response_time_ms}ms` : '—'}</span>
+      <span className="hidden truncate text-gray-400 sm:block">{timeAgo(row.created_at)}</span>
     </div>
   )
 }
@@ -119,15 +121,15 @@ function DetailPanel({ row, onClose, replayState, onReplay }) {
   const resHeaders = safeJson(row.response_headers)
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 bg-white">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
       {/* Panel header */}
-      <div className="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between shrink-0">
+      <div className="flex shrink-0 flex-col gap-2 border-b border-gray-100 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-4">
         <div className="flex items-center gap-2 min-w-0">
           <MethodBadge method={row.method} />
           <span className="text-xs font-mono text-gray-700 truncate">{row.path}</span>
           <StatusCode code={row.status_code} />
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex shrink-0 items-center justify-end gap-2">
           <ReplayButton state={replayState} onClick={onReplay} />
           <button
             onClick={onClose}
@@ -140,7 +142,7 @@ function DetailPanel({ row, onClose, replayState, onReplay }) {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-100 shrink-0 px-4">
+      <div className="flex shrink-0 overflow-x-auto border-b border-gray-100 px-3 sm:px-4">
         {[['request', 'Request'], ['response', 'Response']].map(([key, label]) => (
           <button
             key={key}
@@ -156,7 +158,7 @@ function DetailPanel({ row, onClose, replayState, onReplay }) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-3 space-y-4 sm:p-4">
         {tab === 'request' ? (
           <>
             <MetaRow label="Method"   value={row.method} />
@@ -234,7 +236,7 @@ function ReplayButton({ state, onClick }) {
 function Section({ title, copiable, children }) {
   return (
     <div>
-      <div className="flex items-center justify-between mb-1.5">
+      <div className="mb-1.5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">{title}</span>
         {copiable && <CopyButton text={copiable} label="Copy" className="!py-0.5 !px-2 !text-[10px]" />}
       </div>
@@ -248,10 +250,10 @@ function HeadersTable({ headers }) {
     return <p className="text-xs text-gray-400 italic">None</p>
   }
   return (
-    <div className="rounded border border-gray-100 overflow-hidden divide-y divide-gray-50">
+    <div className="overflow-hidden rounded border border-gray-100 divide-y divide-gray-50">
       {Object.entries(headers).map(([k, v]) => (
-        <div key={k} className="grid grid-cols-[140px_1fr] text-xs font-mono">
-          <span className="bg-gray-50 px-2 py-1.5 text-gray-500 truncate border-r border-gray-100" title={k}>{k}</span>
+        <div key={k} className="grid grid-cols-1 text-xs font-mono sm:grid-cols-[140px_1fr]">
+          <span className="truncate border-gray-100 bg-gray-50 px-2 py-1.5 text-gray-500 sm:border-r" title={k}>{k}</span>
           <span className="px-2 py-1.5 text-gray-800 break-all">{String(v)}</span>
         </div>
       ))}
@@ -261,9 +263,9 @@ function HeadersTable({ headers }) {
 
 function MetaRow({ label, value }) {
   return (
-    <div className="flex items-center gap-3 text-xs">
+    <div className="flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:gap-3">
       <span className="text-gray-400 w-20 shrink-0">{label}</span>
-      <span className="text-gray-700 font-mono">{value}</span>
+      <span className="break-all text-gray-700 font-mono">{value}</span>
     </div>
   )
 }

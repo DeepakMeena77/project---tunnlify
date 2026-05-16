@@ -117,7 +117,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-white flex flex-col">
       <Navbar />
 
-      <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-10 space-y-8">
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-6 space-y-6 sm:px-6 sm:py-10 sm:space-y-8">
 
         {/* Page header */}
         <div>
@@ -136,36 +136,36 @@ export default function DashboardPage() {
 
         {/* Tunnel URL card */}
         <div className="card-md space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-sm font-medium text-gray-700">Your tunnel URL</span>
             <StatusBadge online={online} />
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex-1 flex items-center gap-2 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md overflow-hidden">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-md border border-gray-200 bg-gray-50 px-3 py-2.5">
               <GlobeIcon className="w-4 h-4 text-gray-400 shrink-0" />
               <span className="text-sm font-mono text-gray-800 truncate">{publicUrl}</span>
             </div>
-            <CopyButton text={publicUrl} label="Copy URL" />
-            <a href={publicUrl} target="_blank" rel="noreferrer" className="btn-secondary btn-sm shrink-0">
+            <CopyButton text={publicUrl} label="Copy URL" className="w-full sm:w-auto" />
+            <a href={publicUrl} target="_blank" rel="noreferrer" className="btn-secondary btn-sm w-full shrink-0 sm:w-auto">
               Open ↗
             </a>
           </div>
 
           {!online && (
-            <div className="rounded-md bg-gray-950 p-4">
+            <div className="rounded-md bg-gray-950 p-3 sm:p-4">
               <p className="text-xs text-gray-500 mb-2 font-mono">Run this command to activate your tunnel:</p>
-              <div className="flex items-center justify-between gap-3">
-                <code className="text-sm text-gray-100 font-mono truncate">{tunnelCmd}</code>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <code className="block min-w-0 overflow-x-auto whitespace-nowrap text-sm text-gray-100 font-mono">{tunnelCmd}</code>
                 <CopyButton text={tunnelCmd}
-                  className="!border-gray-700 !text-gray-400 hover:!text-gray-200 hover:!bg-gray-800 shrink-0" />
+                  className="w-full shrink-0 !border-gray-700 !text-gray-400 hover:!bg-gray-800 hover:!text-gray-200 sm:w-auto" />
               </div>
             </div>
           )}
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard label="Status">
             <StatusBadge online={online} large />
           </StatCard>
@@ -182,7 +182,7 @@ export default function DashboardPage() {
         {/* ── Tabbed panel ───────────────────────────────────────────────────── */}
         <div>
           {/* Tab bar */}
-          <div className="flex border-b border-gray-200 mb-0">
+          <div className="mb-0 flex overflow-x-auto border-b border-gray-200">
             <TabBtn active={tab === 'overview'}  onClick={() => setTab('overview')}>
               Overview
             </TabBtn>
@@ -248,19 +248,19 @@ function UpgradePrompt({ usage, loadingPlan, error, onUpgrade }) {
         </div>
 
         {nextPlans.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             {nextPlans.map(plan => plan.checkout_enabled ? (
                 <button
                   key={plan.key}
                   type="button"
                   onClick={() => onUpgrade(plan.key)}
                   disabled={!!loadingPlan}
-                  className="btn-primary btn-sm whitespace-nowrap"
+                  className="btn-primary btn-sm w-full whitespace-nowrap sm:w-auto"
                 >
                   {loadingPlan === plan.key ? 'Opening...' : `${plan.label} ${formatPlanPrice(plan)}`}
                 </button>
               ) : (
-                <span key={plan.key} className="badge-gray whitespace-nowrap">
+                <span key={plan.key} className="badge-gray justify-center whitespace-nowrap">
                   {plan.label} coming soon
                 </span>
               )
@@ -277,8 +277,9 @@ function UpgradePrompt({ usage, loadingPlan, error, onUpgrade }) {
 function TabBtn({ active, onClick, children }) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors
+      className={`shrink-0 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors
         ${active
           ? 'border-gray-900 text-gray-900'
           : 'border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300'}`}
@@ -323,9 +324,9 @@ function SimulatedFeed() {
   }, [])
 
   return (
-    <div className="divide-y divide-gray-100 max-h-72 overflow-y-auto">
+    <div className="max-h-72 overflow-x-auto overflow-y-auto divide-y divide-gray-100">
       {entries.map(e => (
-        <div key={e.id} className="px-5 py-2.5 flex items-center gap-4 text-xs font-mono hover:bg-gray-50 transition-colors">
+        <div key={e.id} className="flex min-w-[34rem] items-center gap-4 px-5 py-2.5 text-xs font-mono transition-colors hover:bg-gray-50">
           <span className="text-gray-400 w-20 shrink-0">{e.time}</span>
           <MethodBadge method={e.method} />
           <span className="text-gray-700 flex-1 truncate">{e.path}</span>
@@ -343,9 +344,9 @@ function EmptyRequests({ publicUrl, onInspect }) {
       <p className="text-sm text-gray-400">No requests yet.</p>
       <p className="text-xs text-gray-400">
         Start your tunnel and visit{' '}
-        <span className="font-mono text-gray-600">{publicUrl}</span>
+        <span className="break-all font-mono text-gray-600">{publicUrl}</span>
       </p>
-      <button onClick={onInspect} className="btn-secondary btn-sm mt-2">
+      <button type="button" onClick={onInspect} className="btn-secondary btn-sm mt-2">
         Open Inspector
       </button>
     </div>

@@ -8,6 +8,7 @@
   }
 
   html, body {
+    min-height: 100%;
     background-color: #ffffff;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -15,9 +16,11 @@
 
   body {
     @apply text-gray-900 font-sans;
+    overflow-x: hidden;
   }
 
   #root {
+    min-height: 100%;
     background-color: #ffffff;
   }
 }
