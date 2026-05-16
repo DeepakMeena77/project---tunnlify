@@ -23,7 +23,7 @@ if (args.help || args.h || process.argv.slice(2).length === 0) {
 const [command] = args._;
 
 if (command !== 'start') {
-  console.error(`\n  ✖  Unknown command: "${command}". Run "tunnel --help" for usage.\n`);
+  console.error(`\n  ✖  Unknown command: "${command}". Run "tunnlify --help" for usage.\n`);
   process.exit(1);
 }
 
@@ -31,14 +31,18 @@ if (command !== 'start') {
 const missing = ['port', 'subdomain', 'token'].filter((k) => !args[k]);
 if (missing.length) {
   console.error(`\n  ✖  Missing required flag(s): ${missing.map((f) => '--' + f).join(', ')}\n`);
-  console.error('  Run "tunnel --help" for usage.\n');
+  console.error('  Run "tunnlify --help" for usage.\n');
   process.exit(1);
 }
 
 const port      = Number(args.port);
 const subdomain = String(args.subdomain);
 const token     = String(args.token);
-const server    = String(args.server || 'wss://yourserver.com');
+const server    = String(
+  args.server ||
+  process.env.TUNNLIFY_SERVER ||
+  'wss://project-tunnlify.onrender.com'
+);
 
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
   console.error(`\n  ✖  --port must be a valid port number (1–65535), got: ${args.port}\n`);

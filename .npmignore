@@ -1,0 +1,20 @@
+# Server-side code — never published to npm
+server.js
+auth/
+billing/
+db/
+test/
+client/
+client-example.js
+
+# Logs & local config
+*.log
+.env
+.env.example
+client.log
+server.log
+
+# Dev files
+.git/
+.gitignore
+node_modules/

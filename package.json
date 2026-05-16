@@ -1,11 +1,25 @@
 {
   "name": "tunnlify",
   "version": "1.0.0",
-  "description": "WebSocket-based HTTP tunnel server + CLI client",
-  "main": "server.js",
+  "description": "Expose your localhost to the world instantly — a fast WebSocket-based HTTP tunnel CLI",
   "bin": {
-    "tunnel": "./bin/tunnel.js"
+    "tunnlify": "./bin/tunnel.js"
   },
+  "files": [
+    "bin/",
+    "lib/",
+    "README.md"
+  ],
+  "keywords": [
+    "tunnel",
+    "localhost",
+    "ngrok",
+    "websocket",
+    "http-tunnel",
+    "expose",
+    "proxy",
+    "cli"
+  ],
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",

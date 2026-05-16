@@ -1,192 +1,110 @@
-# Tunnlify — WebSocket HTTP Tunnel Server
+# Tunnlify
 
-Expose a local HTTP service to the internet via a WebSocket tunnel.
+> **Expose your localhost to the world instantly** — a fast, lightweight alternative to ngrok powered by WebSockets.
 
-## Architecture
+```bash
+npm install -g tunnlify
+```
+
+---
+
+## How it works
 
 ```
-Internet caller
-    │  GET http://john.tunnels.com:3000/api/data
-    ▼
-┌─────────────────────────────────┐
-│       Tunnel Server (server.js) │  :3000  (HTTP + WS on same port)
-│  Express  ──►  tunnels.get(sub) │
-│               │  JSON over WS   │
-└───────────────┼─────────────────┘
-                │ WebSocket
-┌───────────────▼─────────────────┐
-│   Tunnel Client (your machine)  │
-│  client-example.js              │
-│     ──► localhost:8080 (local)  │
-└─────────────────────────────────┘
+Your Local App (localhost:3000)
+        │
+        │  WebSocket tunnel
+        ▼
+  Tunnlify Server  ──►  Public URL shared with anyone
 ```
+
+Anyone can hit your public tunnel URL and the request gets forwarded live to your local machine — no port forwarding, no firewall rules.
+
+---
 
 ## Quick Start
 
-```bash
-# 1. Install dependencies
-npm install
+### 1. Sign up & get your API token
 
-# 2. Start the tunnel server
-npm start
-# or with auto-reload (Node ≥ 18)
-npm run dev
+👉 Go to **[https://tunnlify.vercel.app](https://tunnlify.vercel.app)**
 
-# 3. In another terminal, start the example tunnel client
-node client-example.js
-```
+- Create a free account
+- Open the **Dashboard**
+- Copy your **API Token**
 
-## WebSocket Protocol
-
-All messages are UTF-8 JSON frames.
-
-### Client → Server
-
-| `type`     | Fields                            | Description                          |
-|------------|-----------------------------------|--------------------------------------|
-| `register` | `subdomain`, `token`              | Claim a subdomain                    |
-| `response` | `requestId`, `status`, `headers`, `body`, `bodyBase64` | Reply to a proxied HTTP request |
-| `pong`     | —                                 | Application-level heartbeat reply    |
-
-### Server → Client
-
-| `type`       | Fields                                    | Description                        |
-|--------------|-------------------------------------------|------------------------------------|
-| `registered` | `subdomain`, `publicUrl`                  | Subdomain successfully registered  |
-| `request`    | `requestId`, `method`, `path`, `headers`, `body`, `bodyBase64` | HTTP request to forward |
-| `ping`       | —                                         | Application-level heartbeat ping   |
-| `error`      | `message`                                 | Registration or protocol error     |
-
-### Body encoding
-
-Request / response bodies are `base64`-encoded when `bodyBase64: true`.
-
-## Configuration
-
-Set these environment variables in `.env` or your hosting provider:
-
-| Variable                    | Default       | Description                           |
-|-----------------------------|---------------|---------------------------------------|
-| `PORT`                      | —             | Hosting-provided listen port          |
-| `HTTP_PORT`                 | `3000`        | HTTP + WebSocket listen port          |
-| `TUNNEL_DOMAIN`             | `tunnels.com` | Host suffix for subdomain routing     |
-| `TUNNEL_URL_MODE`           | `subdomain`   | `subdomain` or `path` tunnel URLs     |
-| `PUBLIC_TUNNEL_PROTOCOL`    | `http`/`https` | Protocol shown in tunnel URLs        |
-| `PUBLIC_TUNNEL_PORT`        | local port    | Optional public URL port              |
-| `PUBLIC_TUNNEL_BASE_URL`    | derived       | Backend base URL for path mode        |
-| `DB_DRIVER`                 | —             | Set to `file` for zero-setup local dev |
-| `DATABASE_URL` or `PG*`     | —             | PostgreSQL connection                 |
-| `DATABASE_URL_SSL`          | auto          | Set `true`/`false` for hosted DB TLS  |
-| `JWT_SECRET`                | —             | Secret used to sign auth tokens       |
-| `FRONTEND_URL`              | —             | Hosted frontend URL for CORS          |
-| `CORS_ORIGIN`               | —             | Comma-separated allowed origins       |
-| `APP_URL`                   | request origin | Frontend URL for Stripe redirects     |
-| `BILLING_ENABLED`           | `false`       | Set `true` only when Stripe is ready  |
-| `STRIPE_SECRET_KEY`         | —             | Stripe secret API key                 |
-| `STRIPE_WEBHOOK_SECRET`     | —             | Stripe webhook signing secret         |
-| `STRIPE_DEVELOPER_PRICE_ID` | —             | Stripe INR monthly price for Developer |
-| `STRIPE_TEAM_PRICE_ID`      | —             | Stripe INR monthly price for Team      |
-
-Client build variables:
-
-| Variable                 | Default                 | Description                |
-|--------------------------|-------------------------|----------------------------|
-| `VITE_API_URL`           | same origin             | Backend API base URL       |
-| `VITE_TUNNEL_URL_MODE`   | `subdomain`             | `subdomain` or `path` tunnel URLs |
-| `VITE_TUNNEL_DOMAIN`     | `tunnels.com`           | Public tunnel host suffix  |
-| `VITE_TUNNEL_PROTOCOL`   | `http`                  | `http` locally, `https` in production |
-| `VITE_TUNNEL_BASE_URL`   | `VITE_API_URL`          | Backend base URL for path mode |
-| `VITE_TUNNEL_SERVER_URL` | derived from API URL    | WebSocket URL for the tunnel CLI |
-
-## Deployment
-
-Recommended free stack for a first public demo:
-
-1. Create a free Postgres database on Neon and copy its pooled connection string.
-2. Deploy the backend as a Render Web Service.
-   - Build command: `npm install`
-   - Start command: `npm start`
-   - Health check path: `/status`
-3. Deploy `client/` as a static site.
-   - Build command: `npm install && npm run build`
-   - Publish directory: `dist`
-4. Optional: point a wildcard domain such as `*.tunnel.example.com` at the backend service, then set `TUNNEL_DOMAIN=tunnel.example.com`.
-
-No-domain deployment mode uses URLs like `https://your-backend.onrender.com/t/john`. Use this when you do not have a wildcard domain yet.
-
-Backend environment example without a custom domain:
+### 2. Install the CLI
 
 ```bash
-DB_DRIVER=postgresql
-DATABASE_URL=postgresql://...
-DATABASE_URL_SSL=true
-JWT_SECRET=replace_with_a_long_random_secret
-TUNNEL_URL_MODE=path
-PUBLIC_TUNNEL_BASE_URL=https://your-backend.onrender.com
-FRONTEND_URL=https://your-frontend.vercel.app
-CORS_ORIGIN=https://your-frontend.vercel.app
-BILLING_ENABLED=false
+npm install -g tunnlify
 ```
 
-Backend environment example with a wildcard domain:
+### 3. Start a tunnel
 
 ```bash
-DB_DRIVER=postgresql
-DATABASE_URL=postgresql://...
-DATABASE_URL_SSL=true
-JWT_SECRET=replace_with_a_long_random_secret
-TUNNEL_DOMAIN=tunnel.example.com
-TUNNEL_URL_MODE=subdomain
-PUBLIC_TUNNEL_PROTOCOL=https
-FRONTEND_URL=https://your-frontend.example.com
-CORS_ORIGIN=https://your-frontend.example.com
-BILLING_ENABLED=false
+tunnlify start --port 3000 --subdomain myapp --token YOUR_API_TOKEN
 ```
 
-On most hosted platforms, leave `PUBLIC_TUNNEL_PORT` unset so public URLs do not include the internal app port.
+You'll see:
 
-Frontend environment example without a custom domain:
+```
+✔  Tunnel registered!
+   Public URL → https://project-tunnlify.onrender.com/t/myapp/
+   Forwarding → localhost:3000
+```
+
+Share that URL with anyone — they'll hit your local app directly.
+
+---
+
+## Usage
+
+```
+tunnlify <command> [flags]
+
+Commands:
+  start   Open a tunnel from a public URL to a local port
+
+Flags (start):
+  --port        (required)  Local port to expose          e.g. 3000
+  --subdomain   (required)  A name for your tunnel        e.g. myapp
+  --token       (required)  Your API token from dashboard
+  --server      (optional)  Custom tunnel server WebSocket URL
+
+Global Flags:
+  --help        Show help and exit
+```
+
+### Examples
 
 ```bash
-VITE_API_URL=https://your-backend.onrender.com
-VITE_TUNNEL_URL_MODE=path
-VITE_TUNNEL_BASE_URL=https://your-backend.onrender.com
-VITE_TUNNEL_SERVER_URL=wss://your-backend.onrender.com
+# Expose a Node.js app on port 3000
+tunnlify start --port 3000 --subdomain myapi --token abc123
+
+# Expose a React / Vite dev server on port 5173
+tunnlify start --port 5173 --subdomain myreact --token abc123
+
+# Expose a Django app on port 8000
+tunnlify start --port 8000 --subdomain django --token abc123
 ```
 
-Frontend environment example with a wildcard domain:
+---
 
-```bash
-VITE_API_URL=https://your-backend.example.com
-VITE_TUNNEL_URL_MODE=subdomain
-VITE_TUNNEL_DOMAIN=tunnel.example.com
-VITE_TUNNEL_PROTOCOL=https
-```
+## Plans
 
-## Billing
-
-Plans are enforced by active tunnel count:
-
-| Plan      | Price     | Active tunnels |
-|-----------|-----------|----------------|
-| Free      | Free      | 1              |
+| Plan      | Price      | Active Tunnels |
+|-----------|------------|----------------|
+| Free      | Free       | 1              |
 | Developer | ₹199/month | 5              |
 | Team      | ₹699/month | 20             |
 
-Paid upgrades are disabled by default. When you are ready to enable money flow, set `BILLING_ENABLED=true`, create the paid monthly prices in Stripe using INR, set their price IDs in the environment, and point Stripe webhooks at:
+---
 
-```bash
-POST /billing/webhook
-```
+## Requirements
 
-The webhook handler updates the user's plan on `checkout.session.completed` and `invoice.payment_succeeded`, and downgrades to Free on subscription cancellation.
+- **Node.js** >= 18
 
-## Testing with curl
+---
 
-```bash
-# Test a registered tunnel (john.tunnels.com → local :8080)
-curl -H "Host: john.tunnels.com" http://localhost:3000/
+## License
 
-# Test 404 for unregistered subdomain
-curl -H "Host: nobody.tunnels.com" http://localhost:3000/
-```
+MIT
