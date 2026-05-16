@@ -117,7 +117,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-white flex flex-col">
       <Navbar />
 
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-6 space-y-6 sm:px-6 sm:py-10 sm:space-y-8">
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-6 space-y-6 sm:px-6 md:py-10 md:space-y-8">
 
         {/* Page header */}
         <div>
@@ -136,29 +136,29 @@ export default function DashboardPage() {
 
         {/* Tunnel URL card */}
         <div className="card-md space-y-4">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <span className="text-sm font-medium text-gray-700">Your tunnel URL</span>
             <StatusBadge online={online} />
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
             <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-md border border-gray-200 bg-gray-50 px-3 py-2.5">
               <GlobeIcon className="w-4 h-4 text-gray-400 shrink-0" />
               <span className="text-sm font-mono text-gray-800 truncate">{publicUrl}</span>
             </div>
-            <CopyButton text={publicUrl} label="Copy URL" className="w-full sm:w-auto" />
-            <a href={publicUrl} target="_blank" rel="noreferrer" className="btn-secondary btn-sm w-full shrink-0 sm:w-auto">
+            <CopyButton text={publicUrl} label="Copy URL" className="w-full md:w-auto" />
+            <a href={publicUrl} target="_blank" rel="noreferrer" className="btn-secondary btn-sm w-full shrink-0 md:w-auto">
               Open ↗
             </a>
           </div>
 
           {!online && (
-            <div className="rounded-md bg-gray-950 p-3 sm:p-4">
+            <div className="rounded-md bg-gray-950 p-3 md:p-4">
               <p className="text-xs text-gray-500 mb-2 font-mono">Run this command to activate your tunnel:</p>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <code className="block min-w-0 overflow-x-auto whitespace-nowrap text-sm text-gray-100 font-mono">{tunnelCmd}</code>
                 <CopyButton text={tunnelCmd}
-                  className="w-full shrink-0 !border-gray-700 !text-gray-400 hover:!bg-gray-800 hover:!text-gray-200 sm:w-auto" />
+                  className="w-full shrink-0 !border-gray-700 !text-gray-400 hover:!bg-gray-800 hover:!text-gray-200 md:w-auto" />
               </div>
             </div>
           )}
@@ -248,14 +248,14 @@ function UpgradePrompt({ usage, loadingPlan, error, onUpgrade }) {
         </div>
 
         {nextPlans.length > 0 ? (
-          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <div className="flex flex-col gap-2 md:flex-row md:flex-wrap">
             {nextPlans.map(plan => plan.checkout_enabled ? (
                 <button
                   key={plan.key}
                   type="button"
                   onClick={() => onUpgrade(plan.key)}
                   disabled={!!loadingPlan}
-                  className="btn-primary btn-sm w-full whitespace-nowrap sm:w-auto"
+                  className="btn-primary btn-sm w-full whitespace-nowrap md:w-auto"
                 >
                   {loadingPlan === plan.key ? 'Opening...' : `${plan.label} ${formatPlanPrice(plan)}`}
                 </button>

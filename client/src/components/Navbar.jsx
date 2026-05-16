@@ -17,7 +17,7 @@ export default function Navbar() {
 
   return (
     <header className="border-b border-gray-200 bg-white">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 min-h-14 py-3 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 min-h-14 py-3 flex flex-col items-start gap-3 md:h-14 md:flex-row md:items-center md:justify-between md:py-0">
 
         {/* Logo */}
         <Link to="/" className="flex shrink-0 items-center gap-2 text-gray-900 font-semibold text-sm">
@@ -30,7 +30,7 @@ export default function Navbar() {
         </Link>
 
         {/* Nav links */}
-        <nav className="flex w-full min-w-0 max-w-full flex-none items-center justify-start gap-3 overflow-x-auto sm:w-auto sm:flex-1 sm:justify-end sm:gap-6">
+        <nav className="flex w-full min-w-0 max-w-full flex-none items-center justify-start gap-3 overflow-x-auto md:w-auto md:flex-1 md:justify-end md:gap-6">
           {user ? (
             <>
               <NavLink to="/dashboard" className={linkClass}>Dashboard</NavLink>

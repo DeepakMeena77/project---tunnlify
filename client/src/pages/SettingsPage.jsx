@@ -16,7 +16,7 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-white flex flex-col">
       <Navbar />
 
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-6 space-y-6 sm:px-6 sm:py-10 sm:space-y-8">
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-6 space-y-6 sm:px-6 md:py-10 md:space-y-8">
 
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Settings</h1>
@@ -195,7 +195,7 @@ function TokenDisplay({ token }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-2 md:flex-row md:items-center">
         <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-md border border-gray-200 bg-gray-50 px-3 py-2.5">
           <code className="text-sm font-mono text-gray-800 flex-1 truncate select-all">
             {display}
@@ -205,14 +205,14 @@ function TokenDisplay({ token }) {
         <button
           type="button"
           onClick={() => setRevealed(r => !r)}
-          className="btn-secondary btn-sm w-full shrink-0 sm:w-auto"
+          className="btn-secondary btn-sm w-full shrink-0 md:w-auto"
           aria-label={revealed ? 'Hide token' : 'Reveal token'}
         >
           {revealed ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
           {revealed ? 'Hide' : 'Reveal'}
         </button>
 
-        <CopyButton text={token} label="Copy" className="w-full shrink-0 sm:w-auto" />
+        <CopyButton text={token} label="Copy" className="w-full shrink-0 md:w-auto" />
       </div>
 
       <p className="text-xs text-gray-400">
@@ -338,9 +338,9 @@ function ChangePasswordForm() {
 
 function Row({ label, children }) {
   return (
-    <div className="flex flex-col gap-1 py-1.5 sm:flex-row sm:items-center sm:justify-between">
-      <span className="text-sm text-gray-500 sm:w-32 sm:shrink-0">{label}</span>
-      <span className="min-w-0 break-all text-sm text-gray-900 sm:text-right">{children}</span>
+    <div className="flex flex-col gap-1 py-1.5 md:flex-row md:items-center md:justify-between">
+      <span className="text-sm text-gray-500 md:w-32 md:shrink-0">{label}</span>
+      <span className="min-w-0 break-all text-sm text-gray-900 md:text-right">{children}</span>
     </div>
   )
 }

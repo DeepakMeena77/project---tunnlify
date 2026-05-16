@@ -35,12 +35,12 @@ export default function RequestInspector() {
         </div>
 
         {/* Column headings */}
-        <div className="grid shrink-0 grid-cols-[64px_minmax(0,1fr)_48px] gap-2 border-b border-gray-100 bg-gray-50 px-3 py-2 sm:grid-cols-[64px_minmax(0,1fr)_48px_60px_72px] sm:px-4">
+        <div className="grid shrink-0 grid-cols-[64px_minmax(0,1fr)_48px] gap-2 border-b border-gray-100 bg-gray-50 px-3 py-2 md:grid-cols-[64px_minmax(0,1fr)_48px_60px_72px] md:px-4">
           <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Method</span>
           <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Path</span>
           <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Status</span>
-          <span className="hidden text-[10px] font-semibold uppercase tracking-wide text-gray-400 sm:block">Time</span>
-          <span className="hidden text-[10px] font-semibold uppercase tracking-wide text-gray-400 sm:block">When</span>
+          <span className="hidden text-[10px] font-semibold uppercase tracking-wide text-gray-400 md:block">Time</span>
+          <span className="hidden text-[10px] font-semibold uppercase tracking-wide text-gray-400 md:block">When</span>
         </div>
 
         {/* Rows */}
@@ -98,7 +98,7 @@ function RequestRow({ row, isSelected, onClick, replayState, onReplay }) {
   return (
     <div
       onClick={onClick}
-      className={`grid grid-cols-[64px_minmax(0,1fr)_48px] items-center gap-2 px-3 py-2.5 sm:grid-cols-[64px_minmax(0,1fr)_48px_60px_72px] sm:px-4
+      className={`grid grid-cols-[64px_minmax(0,1fr)_48px] items-center gap-2 px-3 py-2.5 md:grid-cols-[64px_minmax(0,1fr)_48px_60px_72px] md:px-4
         cursor-pointer border-b border-gray-50 text-xs font-mono
         hover:bg-gray-50 transition-colors group
         ${isSelected ? 'bg-gray-50 border-l-2 border-l-gray-900' : ''}`}
@@ -106,8 +106,8 @@ function RequestRow({ row, isSelected, onClick, replayState, onReplay }) {
       <MethodBadge method={row.method} />
       <span className="min-w-0 truncate text-gray-700" title={row.path}>{row.path}</span>
       <StatusCode code={row.status_code} />
-      <span className="hidden text-gray-400 sm:block">{row.response_time_ms != null ? `${row.response_time_ms}ms` : '—'}</span>
-      <span className="hidden truncate text-gray-400 sm:block">{timeAgo(row.created_at)}</span>
+      <span className="hidden text-gray-400 md:block">{row.response_time_ms != null ? `${row.response_time_ms}ms` : '—'}</span>
+      <span className="hidden truncate text-gray-400 md:block">{timeAgo(row.created_at)}</span>
     </div>
   )
 }
