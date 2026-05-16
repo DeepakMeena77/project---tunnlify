@@ -130,10 +130,38 @@ function BillingPlans({ currentPlan }) {
                   <h3 className="text-sm font-semibold text-gray-900">{plan.label}</h3>
                   {isCurrent && <span className="badge-gray">Current</span>}
                 </div>
-                <p className="mt-2 text-2xl font-semibold text-gray-900">
-                  {price === 'Free' ? 'Free' : price.replace('/mo', '')}
-                  {price !== 'Free' && <span className="text-sm font-normal text-gray-500">/mo</span>}
-                </p>
+
+                {price === 'Free' ? (
+                  <p className="mt-2 text-2xl font-semibold text-gray-900">Free</p>
+                ) : (
+                  <div className="mt-2">
+                    {/* Original price — struck through */}
+                    <p className="text-lg font-medium text-gray-400 line-through leading-none">
+                      {price.replace('/mo', '')}
+                      <span className="text-sm font-normal">/mo</span>
+                    </p>
+                    {/* Testing-phase label */}
+                    <p className="mt-1 flex items-center gap-1.5">
+                      <span className="text-2xl font-semibold text-emerald-600">Free</span>
+                      <span
+                        style={{
+                          fontSize: '0.65rem',
+                          fontWeight: 600,
+                          letterSpacing: '0.04em',
+                          padding: '2px 6px',
+                          borderRadius: '999px',
+                          background: '#d1fae5',
+                          color: '#065f46',
+                          textTransform: 'uppercase',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        Testing phase
+                      </span>
+                    </p>
+                  </div>
+                )}
+
                 <p className="mt-1 text-sm text-gray-500">
                   {plan.tunnel_limit} active {plan.tunnel_limit === 1 ? 'tunnel' : 'tunnels'}
                 </p>
@@ -141,11 +169,12 @@ function BillingPlans({ currentPlan }) {
 
               <button
                 type="button"
-                disabled={isCurrent || !isPaid || !canCheckout || !!loadingPlan}
-                onClick={() => handleCheckout(plan.key)}
-                className={isCurrent || !isPaid || !canCheckout ? 'btn-secondary btn-sm w-full' : 'btn-primary btn-sm w-full'}
+                disabled={isCurrent || !isPaid || !!loadingPlan}
+                onClick={() => isPaid && canCheckout && handleCheckout(plan.key)}
+                className={isCurrent || !isPaid ? 'btn-secondary btn-sm w-full' : 'btn-secondary btn-sm w-full'}
+                style={isPaid && !isCurrent ? { borderColor: '#6ee7b7', color: '#065f46', background: '#ecfdf5' } : {}}
               >
-                {isCurrent ? 'Current plan' : !isPaid ? 'Included' : !canCheckout ? 'Coming soon' : loadingPlan === plan.key ? 'Opening...' : 'Upgrade'}
+                {isCurrent ? 'Current plan' : !isPaid ? 'Included' : 'Free for now'}
               </button>
             </div>
           )
