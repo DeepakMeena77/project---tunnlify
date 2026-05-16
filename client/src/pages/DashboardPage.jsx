@@ -156,7 +156,7 @@ export default function DashboardPage() {
             <div className="rounded-md bg-gray-950 p-3 md:p-4">
               <p className="text-xs text-gray-500 mb-2 font-mono">Run this command to activate your tunnel:</p>
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <code className="block min-w-0 overflow-x-auto whitespace-nowrap text-sm text-gray-100 font-mono">{tunnelCmd}</code>
+                <code className="block min-w-0 break-all text-sm text-gray-100 font-mono md:truncate">{tunnelCmd}</code>
                 <CopyButton text={tunnelCmd}
                   className="w-full shrink-0 !border-gray-700 !text-gray-400 hover:!bg-gray-800 hover:!text-gray-200 md:w-auto" />
               </div>
